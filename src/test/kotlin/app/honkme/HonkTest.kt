@@ -1,4 +1,4 @@
-package me.honk
+package app.honkme
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay

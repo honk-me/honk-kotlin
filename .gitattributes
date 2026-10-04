@@ -1,0 +1,4 @@
+# Same rules as `gradle init`: the Unix start script keeps LF, Windows scripts CRLF.
+/gradlew        text eol=lf
+*.bat           text eol=crlf
+*.jar           binary

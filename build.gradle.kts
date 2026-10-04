@@ -5,12 +5,14 @@ import com.vanniktech.maven.publish.SourcesJar
 plugins {
     kotlin("jvm") version "2.4.20"
     `java-library`
+    id("org.jetbrains.dokka") version "2.2.0"
     id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
-// Placeholders, also used in the package name me.honk: see ../README.md "Publishing checklist".
-group = "me.honk"
-version = "0.1.0"
+// Coordinates, version and POM metadata live in gradle.properties (GROUP, POM_ARTIFACT_ID,
+// VERSION_NAME, POM_*); the maven-publish plugin reads them from there.
+group = providers.gradleProperty("GROUP").get()
+version = providers.gradleProperty("VERSION_NAME").get()
 
 repositories {
     mavenCentral()
@@ -20,6 +22,28 @@ kotlin {
     jvmToolchain(17)
     explicitApi()
 }
+
+// Honk.VERSION (and the User-Agent) comes from VERSION_NAME, so the published version and the
+// version the client reports can never drift apart.
+val generateSdkVersion = tasks.register("generateSdkVersion") {
+    val sdkVersion = version.toString()
+    val outputDir = layout.buildDirectory.dir("generated/sources/sdkVersion/kotlin")
+    inputs.property("version", sdkVersion)
+    outputs.dir(outputDir)
+    doLast {
+        val file = outputDir.get().file("app/honkme/SdkVersion.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            |// Generated from VERSION_NAME in gradle.properties. Do not edit.
+            |package app.honkme
+            |
+            |internal const val SDK_VERSION: String = "$sdkVersion"
+            |""".trimMargin(),
+        )
+    }
+}
+kotlin.sourceSets.named("main") { kotlin.srcDir(generateSdkVersion) }
 
 dependencies {
     // Coroutines for the suspend API (cancellation, withTimeout) and CompletableFuture interop.
@@ -53,38 +77,20 @@ tasks.register<Test>("integrationTest") {
     testLogging { events("passed", "failed", "skipped") }
 }
 
+dokka {
+    moduleName.set("Honk")
+}
+
 mavenPublishing {
-    configure(KotlinJvm(javadocJar = JavadocJar.Empty(), sourcesJar = SourcesJar.Sources()))
+    // -sources.jar from src/main, -javadoc.jar with the Dokka HTML reference.
+    configure(KotlinJvm(javadocJar = JavadocJar.Dokka("dokkaGeneratePublicationHtml"), sourcesJar = SourcesJar.Sources()))
+    // Sonatype Central Portal. The release workflow runs publishAndReleaseToMavenCentral with
+    // ORG_GRADLE_PROJECT_mavenCentralUsername / ...Password (a portal user token).
     publishToMavenCentral()
-    // Maven Central requires signed artifacts; the release workflow provides the key
-    // (ORG_GRADLE_PROJECT_signingInMemoryKey). Local builds and publishToMavenLocal skip signing.
+    // Central requires signed artifacts. The release workflow passes the key in memory
+    // (ORG_GRADLE_PROJECT_signingInMemoryKey / ...KeyPassword); without one (local builds,
+    // publishToMavenLocal, CI) nothing is signed.
     if (providers.gradleProperty("signingInMemoryKey").isPresent) {
         signAllPublications()
-    }
-    coordinates(group.toString(), "honk-me", version.toString())
-    pom {
-        name.set("honk-me")
-        description.set("Official Kotlin/Java client for Honk: send events from apps, scripts and automations to your phone, with retries and idempotency built in.")
-        inceptionYear.set("2026")
-        url.set("https://github.com/honk-me/honk")
-        licenses {
-            license {
-                name.set("MIT License")
-                url.set("https://opensource.org/license/mit")
-                distribution.set("repo")
-            }
-        }
-        developers {
-            developer {
-                id.set("honk")
-                name.set("Honk contributors")
-                url.set("https://github.com/honk-me")
-            }
-        }
-        scm {
-            url.set("https://github.com/honk-me/honk")
-            connection.set("scm:git:https://github.com/honk-me/honk.git")
-            developerConnection.set("scm:git:ssh://git@github.com/honk-me/honk.git")
-        }
     }
 }

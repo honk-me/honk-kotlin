@@ -1,4 +1,4 @@
-package me.honk
+package app.honkme
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Tag

@@ -1,4 +1,4 @@
-package me.honk
+package app.honkme
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
@@ -215,7 +215,8 @@ public class Honk @JvmOverloads constructor(
     }
 
     public companion object {
-        public const val VERSION: String = "0.1.0"
+        /** The SDK version, sent in the User-Agent (generated from VERSION_NAME in gradle.properties). */
+        public const val VERSION: String = SDK_VERSION
 
         /** Reads `HONK_URL`, `HONK_KEY` and the optional `HONK_SOURCE`, `HONK_ENVIRONMENT`, `HONK_CHANNEL` defaults. */
         @JvmStatic

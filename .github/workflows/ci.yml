@@ -1,0 +1,37 @@
+# Tests on every push and pull request; release.yml calls it before publishing.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: jdk ${{ matrix.java }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17', '21', '25']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # JDK 17 is the toolchain (kotlin.jvmToolchain(17)); the matrix JDK runs Gradle.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v5 # also validates gradle-wrapper.jar
+      - run: ./gradlew test publishToMavenLocal # unsigned local publish builds the POM, sources and javadoc jars

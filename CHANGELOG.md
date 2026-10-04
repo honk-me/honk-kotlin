@@ -1,10 +1,10 @@
 # Changelog
 
-All notable changes to `me.honk:honk-me` (Maven) are documented here. The format follows
+All notable changes to `app.honk-me:sdk` (Maven) are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - 2026-10-03
+## [0.1.0] - 2026-10-04
 
 ### Added
 - `Honk` client for `POST /v1/messages` on `java.net.http.HttpClient` (JDK 17+): a `suspend`

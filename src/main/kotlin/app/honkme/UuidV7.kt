@@ -1,4 +1,4 @@
-package me.honk
+package app.honkme
 
 import java.security.SecureRandom
 

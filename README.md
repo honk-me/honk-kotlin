@@ -1,8 +1,10 @@
-# honk-me (Kotlin / Java)
+# Honk for Kotlin and Java
 
-Official Kotlin and Java client for [Honk](https://github.com/honk-me/honk), the self-hosted
-inbox that turns events from your apps, scripts, cron jobs and CI into calm, grouped push
-notifications on your phone.
+[![CI](https://github.com/honk-me/honk-kotlin/actions/workflows/ci.yml/badge.svg)](https://github.com/honk-me/honk-kotlin/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/app.honk-me/sdk)](https://central.sonatype.com/artifact/app.honk-me/sdk)
+
+Official Kotlin and Java client for [Honk](https://honk-me.app), the inbox that turns events
+from your apps, scripts, cron jobs and CI into calm, grouped push notifications on your phone.
 
 - JDK 17+, `java.net.http.HttpClient` (keep-alive, HTTP/2 over https).
 - Kotlin: `suspend` API with cancellation. Java: `sendBlocking`, `sendAsync`
@@ -14,27 +16,34 @@ notifications on your phone.
 The ingestion key (`honk_…`) is a secret: use this library on servers, in jobs and CLIs. Never
 ship it inside an Android or desktop app; have the app call your backend instead.
 
+Create a project and an ingestion key at [honk-me.app](https://honk-me.app). Its
+*Integrations* page generates ready-to-paste code for this library.
+
 ## Install
 
 ```kotlin
 // build.gradle.kts
-dependencies { implementation("me.honk:honk-me:0.1.0") }
+dependencies { implementation("app.honk-me:sdk:0.1.0") }
 ```
 
 ```xml
 <!-- pom.xml -->
 <dependency>
-  <groupId>me.honk</groupId>
-  <artifactId>honk-me</artifactId>
+  <groupId>app.honk-me</groupId>
+  <artifactId>sdk</artifactId>
   <version>0.1.0</version>
 </dependency>
 ```
+
+Everything is in the package `app.honkme` (`import app.honkme.Honk`).
 
 ## Quick start
 
 Kotlin:
 
 ```kotlin
+import app.honkme.Honk
+
 val honk = Honk.fromEnvironment()                 // HONK_URL, HONK_KEY (+ HONK_SOURCE, HONK_ENVIRONMENT, HONK_CHANNEL)
 honk.beep("Backup finished", "nightly pg_dump took 42 s")   // suspend
 ```
@@ -42,6 +51,9 @@ honk.beep("Backup finished", "nightly pg_dump took 42 s")   // suspend
 Java:
 
 ```java
+import app.honkme.Honk;
+import app.honkme.Message;
+
 Honk honk = Honk.fromEnvironment();
 honk.sendBlocking(Message.beep("Backup finished", "nightly pg_dump took 42 s").build());
 ```
@@ -221,8 +233,20 @@ cancellation and `CompletableFuture` interop correct.
 
 ```sh
 ./gradlew test                                        # JUnit 5, JDK HttpServer mock, Kotlin + Java tests
-HONK_URL=… HONK_KEY=… ./gradlew integrationTest       # against a real server, see ../README.md
-./gradlew publishToMavenLocal                          # check the artifacts (signing only when a key is configured)
+HONK_URL=… HONK_KEY=… ./gradlew integrationTest       # against a real server (use a test project's key)
+./gradlew publishToMavenLocal                          # jar, sources, Dokka javadoc and POM (signed only when a key is configured)
 ```
+
+Any JDK 17+ runs the build; Gradle downloads a JDK 17 toolchain if the machine has none. The
+version lives in `gradle.properties` (`VERSION_NAME`); `Honk.VERSION` is generated from it.
+Releases: push a tag `vX.Y.Z` matching `VERSION_NAME` and the release workflow publishes to
+Maven Central (see `CHANGELOG.md`).
+
+## Links
+
+- [honk-me.app](https://honk-me.app): the Honk inbox (web, iPhone).
+- Other SDKs: [Node.js](https://github.com/honk-me/honk-node),
+  [PHP / Laravel](https://github.com/honk-me/honk-php), [Go + CLI](https://github.com/honk-me/honk-go),
+  [Swift](https://github.com/honk-me/honk-swift).
 
 MIT License.
