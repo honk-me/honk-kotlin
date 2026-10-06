@@ -46,6 +46,8 @@ public data class Message @JvmOverloads constructor(
     val sourceSequence: Long? = null,
     /** A stable key for this event (1–128 printable ASCII characters), reused on every retry. */
     val idempotencyKey: String? = null,
+    /** Up to 3 buttons, in display order (the first is the primary). Empty: none. */
+    val actions: List<Action> = emptyList(),
 ) {
     /** A builder pre-filled with this message. */
     public fun toBuilder(): Builder = Builder(this)
@@ -69,6 +71,7 @@ public data class Message @JvmOverloads constructor(
         private var ttlSeconds: Int? = from?.ttlSeconds
         private var sourceSequence: Long? = from?.sourceSequence
         private var idempotencyKey: String? = from?.idempotencyKey
+        private val actions: ArrayList<Action> = ArrayList(from?.actions ?: emptyList())
 
         public fun message(message: String): Builder = apply { this.message = message }
 
@@ -114,6 +117,12 @@ public data class Message @JvmOverloads constructor(
         public fun url(url: String?): Builder = apply { this.url = url }
         public fun imageUrl(imageUrl: String?): Builder = apply { this.imageUrl = imageUrl }
 
+        /** Adds a button (at most 3, in display order): `action("Call", "tel:+15550134")`. */
+        public fun action(title: String, url: String): Builder = apply { actions += Action(title, url) }
+
+        /** Adds buttons, in display order. */
+        public fun actions(actions: List<Action>): Builder = apply { this.actions.addAll(actions) }
+
         /** Adds one metadata entry (string, number or boolean). */
         public fun meta(key: String, value: Any): Builder = apply { metadata[key] = value }
 
@@ -128,7 +137,7 @@ public data class Message @JvmOverloads constructor(
             val text = message ?: throw HonkValidationException.local(listOf(FieldError("message", "required", "message is required")))
             return Message(
                 text, title, severity, priority, category, source, environment, channel, groupKey, eventType,
-                occurredAt, url, imageUrl, LinkedHashMap(metadata), ttlSeconds, sourceSequence, idempotencyKey,
+                occurredAt, url, imageUrl, LinkedHashMap(metadata), ttlSeconds, sourceSequence, idempotencyKey, ArrayList(actions),
             )
         }
     }
@@ -171,6 +180,17 @@ public data class Message @JvmOverloads constructor(
         @JvmStatic public fun critical(title: String?, message: String): Builder = blast(title, message)
     }
 }
+
+/**
+ * A button on a message: `Action("Call Emily", "tel:+15550134")`. Honk never opens the URL; the
+ * phone does, when you tap the button.
+ */
+public data class Action(
+    /** 1–40 characters, one line, shown as sent. */
+    val title: String,
+    /** `https://` (no credentials), `mailto:`, `tel:` or `sms:`, ≤ 2048 bytes. */
+    val url: String,
+)
 
 /** Values applied when a message leaves these fields null or empty. */
 public data class Defaults @JvmOverloads constructor(

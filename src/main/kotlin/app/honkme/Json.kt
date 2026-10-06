@@ -5,9 +5,9 @@ import java.math.BigInteger
 
 /**
  * A deliberately tiny JSON writer and reader. The request body is a flat object of strings,
- * numbers and booleans (plus one flat metadata object) and the answers are two small fixed
- * shapes, so a hand-written codec keeps the library free of a serialization framework and its
- * compiler plugin, for Kotlin and Java users alike.
+ * numbers and booleans (plus one flat metadata object and a short array of flat actions) and the
+ * answers are two small fixed shapes, so a hand-written codec keeps the library free of a
+ * serialization framework and its compiler plugin, for Kotlin and Java users alike.
  */
 internal object Json {
     fun write(value: Any?): String = StringBuilder().also { write(it, value) }.toString()

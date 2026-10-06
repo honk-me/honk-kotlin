@@ -29,6 +29,7 @@ class HonkTest {
                     imageUrl = "https://cdn.example.com/a.jpg?w=1&h=2",
                     metadata = mapOf("host" to "app-01", "attempts" to 3, "retried" to true, "ratio" to 0.5),
                     ttlSeconds = 3600, sourceSequence = 42,
+                    actions = listOf(Action("Runbook", "https://example.com/runbooks/redis"), Action("Call on-call", "tel:+15550134")),
                 ),
             )
             assertEquals(Accepted("msg_01k6h3w4z5x6y7z8a9b0c1d2e3", false, Instant.parse("2026-10-02T21:10:00.123Z")), accepted)
@@ -39,7 +40,7 @@ class HonkTest {
             assertEquals("honk-me-kotlin/${Honk.VERSION}", r.header("User-Agent"))
             assertTrue(UUID_V7.matches(r.header("Idempotency-Key")!!))
             assertEquals(
-                """{"title":"Redis connection failed","message":"Billing API could not connect to Redis after 3 attempts.","severity":"error","priority":"high","category":"infrastructure","source":"billing-api","environment":"production","channel":"infrastructure","group_key":"billing/redis/connectivity","event_type":"problem","occurred_at":"2026-10-01T21:10:00.000Z","url":"https://example.com/incidents/redis","image_url":"https://cdn.example.com/a.jpg?w=1&h=2","metadata":{"host":"app-01","attempts":3,"retried":true,"ratio":0.5},"ttl_seconds":3600,"source_sequence":42}""",
+                """{"title":"Redis connection failed","message":"Billing API could not connect to Redis after 3 attempts.","severity":"error","priority":"high","category":"infrastructure","source":"billing-api","environment":"production","channel":"infrastructure","group_key":"billing/redis/connectivity","event_type":"problem","occurred_at":"2026-10-01T21:10:00.000Z","url":"https://example.com/incidents/redis","image_url":"https://cdn.example.com/a.jpg?w=1&h=2","actions":[{"title":"Runbook","url":"https://example.com/runbooks/redis"},{"title":"Call on-call","url":"tel:+15550134"}],"metadata":{"host":"app-01","attempts":3,"retried":true,"ratio":0.5},"ttl_seconds":3600,"source_sequence":42}""",
                 r.body,
             )
         }
@@ -51,8 +52,10 @@ class HonkTest {
             val honk = client(s.url, defaults = Defaults("cron", "production", ""))
             honk.send(Message("a"))
             honk.send(Message("b", source = "laravel", channel = "requests"))
+            honk.send(Message("c", actions = emptyList()))
             assertEquals("""{"message":"a","source":"cron","environment":"production"}""", s.requests[0].body)
             assertEquals("""{"message":"b","source":"laravel","environment":"production","channel":"requests"}""", s.requests[1].body)
+            assertEquals("""{"message":"c","source":"cron","environment":"production"}""", s.requests[2].body)
         }
     }
 

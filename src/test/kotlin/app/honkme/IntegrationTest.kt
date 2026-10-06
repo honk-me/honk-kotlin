@@ -42,6 +42,21 @@ class IntegrationTest {
     }
 
     @Test
+    fun `actions are accepted and part of the idempotency payload`() = runBlocking {
+        val honk = client()
+        val key = "it-${UuidV7.generate()}"
+        val message = Message(
+            "Emily Carter asked for a quote $run", title = "New quote request", groupKey = "requests/$run",
+            actions = listOf(Action("Reply", "mailto:emily@example.com?subject=Your%20quote"), Action("Call", "tel:+15550134")),
+        )
+        val first = honk.send(message, key)
+        val again = honk.send(message, key)
+        assertTrue(!first.duplicate && again.duplicate && again.id == first.id)
+        val e = assertFailsWith<HonkConflictException> { honk.send(message.copy(actions = message.actions.take(1)), key) }
+        assertEquals("idempotency_conflict", e.code)
+    }
+
+    @Test
     fun `same key different payload is a conflict`() = runBlocking {
         val honk = client()
         val key = "it-${UuidV7.generate()}"
@@ -91,6 +106,14 @@ class IntegrationTest {
         val e = assertFailsWith<HonkValidationException> { client(validate = false).send(Message("x", ttlSeconds = 5)) }
         assertTrue(!e.isLocal && e.status == 422)
         assertEquals(listOf("ttl_seconds:out_of_range"), e.fields.map { "${it.field}:${it.code}" })
+    }
+
+    @Test
+    fun `server side action validation maps fields`() = runBlocking {
+        val actions = listOf(Action("Call", "tel:+15550134"), Action("Open", "javascript:alert(1)"))
+        val e = assertFailsWith<HonkValidationException> { client(validate = false).send(Message("x", actions = actions)) }
+        assertTrue(!e.isLocal && e.status == 422)
+        assertEquals(listOf("actions[1].url:invalid_format"), e.fields.map { "${it.field}:${it.code}" })
     }
 
     @Test

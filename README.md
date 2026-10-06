@@ -158,6 +158,7 @@ fun sendBlocking(message: Message, idempotencyKey: String? = null): Accepted
 | `eventType` | `EVENT` `PROBLEM` `RECOVERY` (`RECOVERY` needs `groupKey`) |
 | `occurredAt` | `Instant`, sent as UTC RFC 3339 with milliseconds |
 | `url` / `imageUrl` | `https://` only, no credentials (`imageUrl`: no `#fragment`; fetched by the server afterwards) |
+| `actions` (`action(title, url)`) | up to 3 `Action(title, url)` buttons, see [Actions](#actions) |
 | `metadata` (`meta(k, v)`) | ≤ 16 keys `[A-Za-z0-9_.-]{1,64}`; String (≤ 512 characters), Number or Boolean values |
 | `ttlSeconds` | push lifetime 60–86400 (default 3600) |
 | `sourceSequence` | 0 … 2^53-1, needs `groupKey` |
@@ -181,6 +182,27 @@ honk.sendAsync(Message.builder().title("Disk 91%").message("/var on app-01").lou
 Options (Kotlin named arguments or `Honk.builder()`): `timeoutMs` 5000 per attempt, `retries` 4,
 `deadlineMs` 30000, `defaults`, `validate` (false leaves all checks to the server), `backoff`,
 `httpClient` (configure it never to follow redirects), `userAgent`.
+
+## Actions
+
+Up to three buttons on a message, in display order (the first is the primary). Honk never opens
+them; the phone does when you tap one: Mail for `mailto:`, the Phone app for `tel:`, Messages for
+`sms:`, Safari for `https://`.
+
+```kotlin
+honk.light("New quote request", "Emily Carter asked for a quote: 3 rooms, 2 bathrooms") {
+    groupKey("requests/4812")
+    action("Reply", "mailto:emily@example.com?subject=Your%20quote")
+    action("Call", "tel:+15550134")
+}
+```
+
+Java uses the same builder method (`Message.light(…).action("Call", "tel:+15550134").build()`);
+the constructor takes `actions = listOf(Action(title, url))`. A title is 1–40 characters on one
+line, shown as sent. A URL is at most 2048 bytes without spaces: `https://` (no credentials),
+`mailto:` with one address and an optional `?subject=…&body=…`, `tel:` with a number, or `sms:`
+with a number and an optional `?body=…`. Anything else (`http:`, `javascript:`, app schemes) is
+rejected as `actions[i].url`.
 
 ## Retries and idempotency, guaranteed
 

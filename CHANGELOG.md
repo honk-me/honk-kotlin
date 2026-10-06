@@ -4,6 +4,14 @@ All notable changes to `app.honk-me:sdk` (Maven) are documented here. The format
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `Message.actions`: up to 3 `Action(title, url)` buttons (`https://`, `mailto:`, `tel:` or
+  `sms:`), sent as `actions` and omitted when empty; `Message.Builder.action(title, url)` and
+  `actions(list)`. Validated locally like the server, with errors on `actions`,
+  `actions[i].title` and `actions[i].url`; `Limits.ACTIONS` and `Limits.ACTION_TITLE`.
+
 ## [0.1.0] - 2026-10-04
 
 ### Added

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,10 @@ class JavaInteropTest {
             honk.sendBlocking(new Message("constructor with defaults"));
             honk.sendBlocking(Message.longHonk("Job failed", "exit 1").build());
             honk.sendBlocking(Message.builder().message("x").longHonk().build());
+            honk.sendBlocking(Message.light("New quote request", "Emily asked for a quote")
+                .action("Reply", "mailto:emily@example.com?subject=Your%20quote")
+                .actions(List.of(new Action("Call", "tel:+15550134")))
+                .build());
 
             Map<String, Object> second = server.getRequests().get(1).getJson();
             assertEquals("problem", second.get("event_type"));
@@ -36,6 +41,9 @@ class JavaInteropTest {
             assertEquals("critical", server.getRequests().get(2).getJson().get("severity"));
             assertEquals("error", server.getRequests().get(4).getJson().get("severity"));
             assertEquals("error", server.getRequests().get(5).getJson().get("severity"));
+            assertEquals(
+                List.of(Map.of("title", "Reply", "url", "mailto:emily@example.com?subject=Your%20quote"), Map.of("title", "Call", "url", "tel:+15550134")),
+                server.getRequests().get(6).getJson().get("actions"));
         }
         assertSame(Severity.WARNING, Severity.LOUD);
         assertSame(Severity.CRITICAL, Severity.parse("blast"));
